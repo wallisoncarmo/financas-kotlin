@@ -5,17 +5,19 @@ import android.support.v7.app.AppCompatActivity
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.activity_lista_transacoes.*
 import wallison.carmo.com.br.financaskotlin.R
-import wallison.carmo.com.br.financaskotlin.delegate.TransacaoDelegate
 import wallison.carmo.com.br.financaskotlin.model.Tipo
 import wallison.carmo.com.br.financaskotlin.model.Transacao
 import wallison.carmo.com.br.financaskotlin.ui.ResumeView
 import wallison.carmo.com.br.financaskotlin.ui.adapter.ListaTransacoesAdapter
-import wallison.carmo.com.br.financaskotlin.ui.dialog.AddTransacaoDialog
-import java.math.BigDecimal
+import wallison.carmo.com.br.financaskotlin.ui.dialog.TransacaoDialogAdd
+import wallison.carmo.com.br.financaskotlin.ui.dialog.TransacaoDialogUpdate
 
 class ListaTransacoesActivity : AppCompatActivity() {
 
     private val transacoes: MutableList<Transacao> = mutableListOf()
+    private val viewActivity by lazy {
+        window.decorView
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,48 +28,60 @@ class ListaTransacoesActivity : AppCompatActivity() {
         configFab()
     }
 
-    private fun configFab() {
-        lista_transacoes_adiciona_receita.setOnClickListener {
-            showAddDialog(Tipo.RECEITA)
-        }
-
-        lista_transacoes_adiciona_despesa.setOnClickListener {
-            showAddDialog(Tipo.DESPESA)
-        }
-    }
-
-    private fun showAddDialog(tipo:Tipo) {
-        AddTransacaoDialog(window.decorView as ViewGroup, this)
-                .show(tipo, object : TransacaoDelegate {
-                    override fun delegate(transacao: Transacao) {
-                        updateTransacao(transacao)
-                        lista_transacoes_adiciona_menu.close(true)
-                    }
+    private fun showDialogAdd(tipo: Tipo) {
+        TransacaoDialogAdd(viewActivity as ViewGroup, this)
+                .show(tipo, { newTransacao ->
+                    add(newTransacao)
+                    lista_transacoes_adiciona_menu.close(true)
                 })
     }
 
-    private fun updateTransacao(transacao: Transacao) {
+    private fun showDialogUpdate(transacao: Transacao, position: Int) {
+        TransacaoDialogUpdate(viewActivity as ViewGroup, this)
+                .show(transacao, { newTransacao ->
+                    update(newTransacao, position)
+                })
+    }
+
+    private fun add(transacao: Transacao) {
         transacoes.add(transacao)
+        updateTransacao()
+    }
+
+    private fun updateTransacao() {
         configList()
         configResume()
     }
 
+    private fun update(transacao: Transacao, position: Int) {
+        transacoes[position] = transacao
+        updateTransacao()
+    }
+
+    private fun configFab() {
+        lista_transacoes_adiciona_receita.setOnClickListener {
+            showDialogAdd(Tipo.RECEITA)
+        }
+
+        lista_transacoes_adiciona_despesa.setOnClickListener {
+            showDialogAdd(Tipo.DESPESA)
+        }
+    }
+
     private fun configResume() {
-        val view = window.decorView
-        val resumeView = ResumeView(this, view, transacoes)
+        val resumeView = ResumeView(this, viewActivity, transacoes)
         resumeView.getResume()
     }
 
     private fun configList() {
-        lista_transacoes_listview.adapter = ListaTransacoesAdapter(transacoes, this)
+        val listaTransacoesAdapter = ListaTransacoesAdapter(transacoes, this)
+        with(lista_transacoes_listview) {
+            adapter = listaTransacoesAdapter
+            setOnItemClickListener { _, _, position, _ ->
+                val transacao = transacoes[position]
+                showDialogUpdate(transacao, position)
+            }
+        }
     }
 
-    private fun transactionList(): List<Transacao> {
-        return listOf(
-                Transacao(valor = BigDecimal(20.5), categoria = "Comida", tipo = Tipo.DESPESA),
-                Transacao(valor = BigDecimal(100.0), categoria = "Economia", tipo = Tipo.RECEITA),
-                Transacao(valor = BigDecimal(700.0), tipo = Tipo.DESPESA),
-                Transacao(valor = BigDecimal(500.0), tipo = Tipo.RECEITA, categoria = "Premio")
-        )
-    }
 }

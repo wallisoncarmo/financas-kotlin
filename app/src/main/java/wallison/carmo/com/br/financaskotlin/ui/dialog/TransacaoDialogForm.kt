@@ -1,8 +1,8 @@
 package wallison.carmo.com.br.financaskotlin.ui.dialog
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
-import android.support.v7.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +10,6 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import kotlinx.android.synthetic.main.form_transacao.view.*
 import wallison.carmo.com.br.financaskotlin.R
-import wallison.carmo.com.br.financaskotlin.delegate.TransacaoDelegate
 import wallison.carmo.com.br.financaskotlin.extension.convertToCalendar
 import wallison.carmo.com.br.financaskotlin.extension.formatPT
 import wallison.carmo.com.br.financaskotlin.model.Tipo
@@ -18,50 +17,49 @@ import wallison.carmo.com.br.financaskotlin.model.Transacao
 import java.math.BigDecimal
 import java.util.*
 
-class AddTransacaoDialog(private val viewGroup: ViewGroup,
-                         private val context: Context) {
+abstract class TransacaoDialogForm(
+        private val context: Context,
+        private val viewGroup: ViewGroup) {
 
     private val newView = createView()
-    private val dateField = newView.form_transacao_data
-    private val categoriaField = newView.form_transacao_categoria
-    private val valorField = newView.form_transacao_valor
+    protected val dateField = newView.form_transacao_data
+    protected val categoriaField = newView.form_transacao_categoria
+    protected val valorField = newView.form_transacao_valor
+    abstract protected val titleButtonOk:String
 
-    fun show(tipo: Tipo, transacaoDelegate: TransacaoDelegate) {
-
+    fun show(tipo: Tipo, delegate: (transacao:Transacao) -> Unit) {
         configFieldDate()
         configFieldCategoria(tipo)
-        configForm(transacaoDelegate, tipo)
+        configForm(tipo,delegate)
     }
 
-    private fun configForm(transacaoDelegate: TransacaoDelegate, tipo: Tipo) {
-
+    private fun configForm(tipo: Tipo, delegate: (transacao: Transacao) -> Unit) {
         val titulo = getTitle(tipo)
 
         AlertDialog.Builder(context)
                 .setTitle(titulo)
                 .setView(newView)
-                .setPositiveButton("Adicionar",
+                .setPositiveButton(titleButtonOk,
                         { _, _ ->
                             val dateValue = dateField.text.toString()
                             val categoria = categoriaField.selectedItem.toString()
                             var value = convertFieldValue(valorField.text.toString())
                             var date = dateValue.convertToCalendar()
 
-                            val transacao = Transacao(tipo = tipo, valor = value, data = date, categoria = categoria)
-                            transacaoDelegate.delegate(transacao)
+                            val transacao = Transacao(
+                                    tipo = tipo,
+                                    valor = value,
+                                    data = date,
+                                    categoria = categoria)
+
+                            delegate(transacao)
                         }
                 )
                 .setNegativeButton("Cancelar", null)
                 .show()
     }
 
-    private fun getTitle(tipo: Tipo): Int {
-        if (tipo == Tipo.RECEITA) {
-            return R.string.adiciona_receita
-        }
-        return R.string.adiciona_despesa
-
-    }
+   abstract protected fun getTitle(tipo: Tipo): Int
 
     private fun convertFieldValue(value: String): BigDecimal {
         return try {
@@ -80,7 +78,7 @@ class AddTransacaoDialog(private val viewGroup: ViewGroup,
         categoriaField.adapter = adapter
     }
 
-    private fun getCategoria(tipo: Tipo): Int {
+    protected fun getCategoria(tipo: Tipo): Int {
         if (tipo == Tipo.RECEITA) {
             return R.array.categorias_de_receita
         }
@@ -109,6 +107,4 @@ class AddTransacaoDialog(private val viewGroup: ViewGroup,
     private fun createView(): View {
         return LayoutInflater.from(context).inflate(R.layout.form_transacao, viewGroup, false)
     }
-
-
 }
