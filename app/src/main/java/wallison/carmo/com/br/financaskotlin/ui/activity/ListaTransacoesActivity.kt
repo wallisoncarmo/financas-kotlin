@@ -2,7 +2,11 @@ package wallison.carmo.com.br.financaskotlin.ui.activity
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuItem
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_lista_transacoes.*
 import wallison.carmo.com.br.financaskotlin.R
 import wallison.carmo.com.br.financaskotlin.model.Tipo
@@ -43,6 +47,16 @@ class ListaTransacoesActivity : AppCompatActivity() {
                 })
     }
 
+    override fun onContextItemSelected(item: MenuItem?): Boolean {
+        val idMenu = item?.itemId
+        if(idMenu==1){
+            val menuInfo = item.menuInfo as AdapterView.AdapterContextMenuInfo
+            val position = menuInfo.position
+            remove(position)
+        }
+        return super.onContextItemSelected(item)
+    }
+
     private fun add(transacao: Transacao) {
         transacoes.add(transacao)
         updateTransacao()
@@ -51,6 +65,10 @@ class ListaTransacoesActivity : AppCompatActivity() {
     private fun updateTransacao() {
         configList()
         configResume()
+    }
+    private fun remove(position: Int) {
+        transacoes.removeAt(position)
+        updateTransacao()
     }
 
     private fun update(transacao: Transacao, position: Int) {
@@ -81,7 +99,12 @@ class ListaTransacoesActivity : AppCompatActivity() {
                 val transacao = transacoes[position]
                 showDialogUpdate(transacao, position)
             }
+            setOnCreateContextMenuListener { menu, _, _ ->
+                menu.add(Menu.NONE, 1, Menu.NONE, "Remover")
+            }
         }
     }
+
+
 
 }
