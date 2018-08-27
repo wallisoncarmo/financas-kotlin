@@ -6,9 +6,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.AdapterView
-import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_lista_transacoes.*
 import wallison.carmo.com.br.financaskotlin.R
+import wallison.carmo.com.br.financaskotlin.dao.TransacaoDao
 import wallison.carmo.com.br.financaskotlin.model.Tipo
 import wallison.carmo.com.br.financaskotlin.model.Transacao
 import wallison.carmo.com.br.financaskotlin.ui.ResumeView
@@ -18,7 +18,8 @@ import wallison.carmo.com.br.financaskotlin.ui.dialog.TransacaoDialogUpdate
 
 class ListaTransacoesActivity : AppCompatActivity() {
 
-    private val transacoes: MutableList<Transacao> = mutableListOf()
+    private val dao = TransacaoDao()
+    private val transacoes = dao.transacoes
     private val viewActivity by lazy {
         window.decorView
     }
@@ -58,7 +59,7 @@ class ListaTransacoesActivity : AppCompatActivity() {
     }
 
     private fun add(transacao: Transacao) {
-        transacoes.add(transacao)
+        dao.insert(transacao)
         updateTransacao()
     }
 
@@ -67,12 +68,12 @@ class ListaTransacoesActivity : AppCompatActivity() {
         configResume()
     }
     private fun remove(position: Int) {
-        transacoes.removeAt(position)
+        dao.delete(position)
         updateTransacao()
     }
 
     private fun update(transacao: Transacao, position: Int) {
-        transacoes[position] = transacao
+        dao.update(transacao,position)
         updateTransacao()
     }
 
